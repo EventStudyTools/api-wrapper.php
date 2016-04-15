@@ -19,14 +19,17 @@ abstract class AbstractApplicationInput {
      * @param mixed $defaultValue
      */
     protected function setWithDefault($where, $parameters, $key, $defaultValue) {
+        if (empty($where)) {
+            return;
+        }
+
+        if (!isset($this->$where)) {
+            $this->$where = new stdClass();
+        }
+
         if (isset($parameters[$key]) && !empty($parameters[$key])) {
             $this->$where->$key = $parameters[$key];
         } elseif(empty($parameters[$key])) {
-
-            if (!isset($this->$where)) {
-                $this->$where = new stdClass();
-            }
-
             $this->$where->$key = $defaultValue;
         }
     }
