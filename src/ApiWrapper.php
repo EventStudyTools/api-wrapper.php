@@ -12,20 +12,20 @@ class ApiWrapper
     protected $token;
 
     /**
-     * @return string
-     */
-    public function getToken()
-    {
-        return $this->token;
-    }
-
-    /**
      * @param $apiEndpoint
      */
     function __construct($apiEndpoint)
     {
         $this->token = '';
         $this->apiServerUrl = $apiEndpoint;
+    }
+
+    /**
+     * @return string
+     */
+    public function getToken()
+    {
+        return $this->token;
     }
 
     /**
@@ -311,6 +311,38 @@ class ApiWrapper
 
         if ((string)$result !== (string)(integer)$result) {
             throw new \Exception(__METHOD__ . ': status is invalid');
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return mixed
+     * @throws \Exception
+     */
+    function getTaskLinks()
+    {
+        if (empty($this->token)) {
+            throw new \Exception(__METHOD__ . ': Configuration validation error');
+        }
+
+        $ch = curl_init($this->apiServerUrl . "/task/links/" . $this->getToken());
+
+        curl_setopt(
+            $ch,
+            CURLOPT_HTTPHEADER,
+            array(
+            )
+        );
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        $result = $this->normalizeResponse($result, __METHOD__);
+
+        if (empty($result) || empty($result->results)) {
+            throw new \Exception(__METHOD__ . ': result is empty');
         }
 
         return $result;
