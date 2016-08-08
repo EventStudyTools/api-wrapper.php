@@ -1,5 +1,5 @@
 <?php
-namespace ApplicationInput;
+namespace EventStudyTools\ApiWrapper\ApplicationInput;
 
 use stdClass;
 

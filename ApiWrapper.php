@@ -1,7 +1,7 @@
 <?php
 namespace EventStudyTools\ApiWrapper;
 
-use ApplicationInput\ApplicationInputInterface;
+use EventStudyTools\ApiWrapper\ApplicationInputInterface;
 
 class ApiWrapper
 {
