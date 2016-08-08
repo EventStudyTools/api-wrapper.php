@@ -1,7 +1,7 @@
 <?php
 namespace EventStudyTools\ApiWrapper;
 
-use EventStudyTools\ApiWrapper\ApplicationInputInterface;
+use EventStudyTools\ApiWrapper\ApplicationInput\ApplicationInputInterface;
 
 class ApiWrapper
 {
@@ -22,7 +22,8 @@ class ApiWrapper
     /**
      * @param $apiEndpoint
      */
-    function __construct($apiEndpoint) {
+    function __construct($apiEndpoint)
+    {
         $this->token = '';
         $this->apiServerUrl = $apiEndpoint;
     }
@@ -30,9 +31,10 @@ class ApiWrapper
     /**
      * @param string $apiKey
      * @param bool $debug
+     * @throws \Exception
      * @return bool
      */
-    function authentication($apiKey, $debug=false)
+    function authentication($apiKey, $debug = false)
     {
         $ch = curl_init($this->apiServerUrl . "/task/create");
         curl_setopt($ch, CURLOPT_POST, true);
@@ -56,13 +58,13 @@ class ApiWrapper
             exit;
         }
 
-        if (!$result === false && !preg_match("~<html~is", $result)) {
-            $temp = json_decode($result);
+        $result = $this->normalizeResponse($result, __METHOD__);
 
-            if (isset($temp->token) && !empty($temp->token)) {
-                $this->token = $temp->token;
-            }
+        if (!is_object($result) || empty($result->token)) {
+            throw new \Exception(__METHOD__ . ': authentication failed');
         }
+
+        $this->token = $result->token;
 
         return !empty($this->token);
     }
@@ -73,9 +75,9 @@ class ApiWrapper
      * @return mixed
      * @throws \Exception
      */
-    function configureTask(ApplicationInputInterface $input, $debug=false) {
-
-        if (empty($this->apiServerUrl) || empty($this->token) || !is_object($input)) {
+    function configureTask(ApplicationInputInterface $input, $debug = false)
+    {
+        if (empty($this->token) || !is_object($input)) {
             throw new \Exception(__METHOD__ . ": required parameters aren't set");
         }
 
@@ -103,11 +105,13 @@ class ApiWrapper
             exit;
         }
 
-        if ($result === false || preg_match("~<html~is", $result) || !preg_match("~^true$~is", $result)) {
+        $result = $this->normalizeResponse($result, __METHOD__);
+
+        if ($result !== true) {
             throw new \Exception(__METHOD__ . ': configuration error');
         }
 
-        return json_decode($result);
+        return true;
     }
 
     /**
@@ -116,33 +120,32 @@ class ApiWrapper
      * @param int $partNumber
      * @throws \Exception
      */
-    function uploadFile($fileKey, $fileName, $partNumber=0)
+    function uploadFile($fileKey, $fileName, $partNumber = 0)
     {
-
-        if (empty($this->apiServerUrl) || empty($this->token) || empty($fileKey) || empty($fileName)) {
+        if (empty($this->token) || empty($fileKey) || empty($fileName)) {
             throw new \Exception(__METHOD__ . ': configuration error');
         }
 
-        if ( !($fd = fopen($fileName, 'r') ) ) {
+        if (!($fd = fopen($fileName, 'r'))) {
             throw new \Exception(__METHOD__ . ': cannot read file ' . $fileName);
         }
 
         /*
          * @todo define class field for maxChunkSize
          */
-        $maxChunkSize = 40 * 1024 *1024;
+        $maxChunkSize = 40 * 1024 * 1024;
 
         /*
          * +1000 is a dirty hack. I don't know why splitfile is set to write 41943040 but filesize yields 41943055
          * @todo understand why it happens and fix on more smart manner
          */
-        if ( filesize($fileName) > $maxChunkSize +1000) {
+        if (filesize($fileName) > $maxChunkSize + 1000) {
             fclose($fd);
 
-            $files =array();
+            $files = array();
             try {
                 $files = $this->splitFile($fileName, $maxChunkSize);
-                foreach($files as $key => $value) {
+                foreach ($files as $key => $value) {
                     $this->uploadFile($fileKey, $value, $key);
                 }
             } catch (\Exception $ex) {
@@ -179,17 +182,20 @@ class ApiWrapper
 
         fclose($fd);
 
-        if ($result === false || preg_match("~<html~is", $result)) {
-            throw new \Exception(__METHOD__ . ": file $fileKey upload error");
+        $result = $this->normalizeResponse($result, __METHOD__ . ' (' . $fileKey . ')');
+
+        if ($result !== true) {
+            throw new \Exception(__METHOD__ . ' (' . $fileKey . ')' . ': configuration error');
         }
     }
 
     /**
      * @param $parts
      */
-    protected function deleteFileParts($parts) {
+    protected function deleteFileParts($parts)
+    {
         if (!empty($parts)) {
-            foreach($parts as $file) {
+            foreach ($parts as $file) {
                 unlink($file);
             }
         }
@@ -201,26 +207,26 @@ class ApiWrapper
      * @return array
      * @throws \Exception
      */
-    protected function splitFile($fileName, $maxChunkSize) {
-
-        $i=0;
+    protected function splitFile($fileName, $maxChunkSize)
+    {
+        $i = 0;
         $partFileNames = array();
 
         $handle = fopen($fileName, 'r');
 
-        while (!feof ($handle)) {
+        while (!feof($handle)) {
             $buffer = '';
             $i++;
-            $partFileName =$fileName . '.part' . $i;
+            $partFileName = $fileName . '.part' . $i;
             $partHandle = fopen($partFileName, "w");
 
             if (!$partHandle) {
                 fclose($handle);
                 fclose($partHandle);
-                throw new \Exception(" Cannot write file part $partFileName");
+                throw new \Exception("Cannot write file part $partFileName");
             }
 
-            while(strlen($buffer)  < $maxChunkSize && !feof($handle)) {
+            while (strlen($buffer) < $maxChunkSize && !feof($handle)) {
                 $buffer .= fgets($handle);
             }
 
@@ -234,7 +240,7 @@ class ApiWrapper
             fclose($partHandle);
         }
 
-        fclose ($handle);
+        fclose($handle);
 
         return $partFileNames;
     }
@@ -245,7 +251,7 @@ class ApiWrapper
      */
     function commitData()
     {
-        if (empty($this->apiServerUrl) || empty($this->token)) {
+        if (empty($this->token)) {
             throw new \Exception(__METHOD__ . ': Configuration validation error');
         }
 
@@ -267,29 +273,27 @@ class ApiWrapper
         $result = curl_exec($ch);
         curl_close($ch);
 
-        if ($result === false || preg_match("~<html~is", $result) || !preg_match("~^\{\"log\":~is", $result)) {
-            throw new \Exception(__METHOD__ . ": application data are incorrect");
+        $result = $this->normalizeResponse($result, __METHOD__);
+
+        if (!is_object($result) || empty($result->log)) {
+            throw new \Exception(__METHOD__ . ': response is invalid');
         }
 
-        return json_decode($result);
+        return $result;
     }
 
     /**
-     * @param bool $debug if want see API output more than get results
+     * @return integer
      * @throws \Exception
-     * @return mixed
      */
-    function processTask($debug = false)
+    function getTaskStatus()
     {
-        if (empty($this->apiServerUrl) || empty($this->token)) {
-            throw new \Exception(__METHOD__ . ': configuration error');
+        if (empty($this->token)) {
+            throw new \Exception(__METHOD__ . ': Configuration validation error');
         }
 
+        $ch = curl_init($this->apiServerUrl . "/task/status");
 
-        $ch = curl_init($this->apiServerUrl . "/task/process");
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, '');
         curl_setopt(
             $ch,
             CURLOPT_HTTPHEADER,
@@ -298,37 +302,18 @@ class ApiWrapper
                 "X-Task-Key: $this->token",
             )
         );
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($debug) {
-            var_dump($result);
-            exit;
+        $result = $this->normalizeResponse($result, __METHOD__);
+
+        if ((string)$result !== (string)(integer)$result) {
+            throw new \Exception(__METHOD__ . ': status is invalid');
         }
 
-       /*
-        * Handle any unusual output
-        */
-        if ($result === false || preg_match("~<html~is", $result) || !preg_match("~^\{\"log\":~is", $result)) {
-            throw new \Exception(__METHOD__ . ": Application launch error");
-        }
-
-        /*
-         * Handle standard error output
-         */
-        if ($httpcode != 200) {
-            $result = json_decode($result);
-
-            if (isset($result->error)) {
-                throw new \Exception($result->error);
-            } else {
-                throw new \Exception("Application launch error");
-            }
-        }
-
-        return json_decode($result);
+        return $result;
     }
 
     /**
@@ -352,5 +337,27 @@ class ApiWrapper
         }
 
         return $version;
+    }
+
+    /**
+     * Normalize and check response
+     * @param $response
+     * @param $method
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function normalizeResponse($response, $method)
+    {
+        if ($response === false) {
+            throw new \Exception($method . ': request to api failed');
+        }
+
+        $response = json_decode($response);
+
+        if (is_object($response) && !empty($response->error)) {
+            throw new \Exception($method . ': ' . $response->error);
+        }
+
+        return $response;
     }
 }
