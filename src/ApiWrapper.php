@@ -283,10 +283,11 @@ class ApiWrapper
     }
 
     /**
+     * @param $exceptionOnError
      * @return integer
      * @throws \Exception
      */
-    function getTaskStatus()
+    function getTaskStatus($exceptionOnError = false)
     {
         if (empty($this->token)) {
             throw new \Exception(__METHOD__ . ': Configuration validation error');
@@ -307,10 +308,14 @@ class ApiWrapper
         $result = curl_exec($ch);
         curl_close($ch);
 
-        $result = $this->normalizeResponse($result, __METHOD__);
+        $result = $this->normalizeResponse($result, __METHOD__, $exceptionOnError);
 
         if ((string)$result !== (string)(integer)$result) {
-            throw new \Exception(__METHOD__ . ': status is invalid');
+            if ($exceptionOnError) {
+                throw new \Exception(__METHOD__ . ': status is invalid');
+            } else {
+                return false;
+            }
         }
 
         return $result;
@@ -375,19 +380,28 @@ class ApiWrapper
      * Normalize and check response
      * @param $response
      * @param $method
+     * @param $exceptionOnError
      * @return mixed
      * @throws \Exception
      */
-    protected function normalizeResponse($response, $method)
+    protected function normalizeResponse($response, $method, $exceptionOnError = true)
     {
         if ($response === false) {
-            throw new \Exception($method . ': request to api failed');
+            if ($exceptionOnError) {
+                throw new \Exception($method . ': request to api failed');
+            } else {
+                return false;
+            }
         }
 
         $response = json_decode($response);
 
         if (is_object($response) && !empty($response->error)) {
-            throw new \Exception($method . ': ' . $response->error);
+            if ($exceptionOnError) {
+                throw new \Exception($method . ': ' . $response->error);
+            } else {
+                return false;
+            }
         }
 
         return $response;
