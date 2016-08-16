@@ -50,7 +50,10 @@ class ApiWrapper
         );
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
         if ($debug) {
@@ -58,7 +61,7 @@ class ApiWrapper
             exit;
         }
 
-        $result = $this->normalizeResponse($result, __METHOD__);
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__);
 
         if (!is_object($result) || empty($result->token)) {
             throw new \Exception(__METHOD__ . ': authentication failed');
@@ -98,6 +101,8 @@ class ApiWrapper
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
         if ($debug) {
@@ -105,7 +110,7 @@ class ApiWrapper
             exit;
         }
 
-        $result = $this->normalizeResponse($result, __METHOD__);
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__);
 
         if ($result !== true) {
             throw new \Exception(__METHOD__ . ': configuration error');
@@ -177,12 +182,15 @@ class ApiWrapper
         curl_setopt($ch, CURLOPT_INFILE, $fd);
         curl_setopt($ch, CURLOPT_INFILESIZE, filesize($fileName));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
         fclose($fd);
 
-        $result = $this->normalizeResponse($result, __METHOD__ . ' (' . $fileKey . ')');
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__ . ' (' . $fileKey . ')');
 
         if ($result !== true) {
             throw new \Exception(__METHOD__ . ' (' . $fileKey . ')' . ': configuration error');
@@ -270,10 +278,13 @@ class ApiWrapper
         );
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
-        $result = $this->normalizeResponse($result, __METHOD__);
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__);
 
         if (!is_object($result) || empty($result->log)) {
             throw new \Exception(__METHOD__ . ': response is invalid');
@@ -305,10 +316,13 @@ class ApiWrapper
         );
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
-        $result = $this->normalizeResponse($result, __METHOD__, $exceptionOnError);
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__, $exceptionOnError);
 
         if ((string)$result !== (string)(integer)$result) {
             if ($exceptionOnError) {
@@ -341,10 +355,13 @@ class ApiWrapper
         );
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $result = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         curl_close($ch);
 
-        $result = $this->normalizeResponse($result, __METHOD__);
+        $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__);
 
         if (empty($result) || empty($result->results)) {
             throw new \Exception(__METHOD__ . ': result is empty');
@@ -379,12 +396,13 @@ class ApiWrapper
     /**
      * Normalize and check response
      * @param $response
+     * @param $httpcode
      * @param $method
      * @param $exceptionOnError
      * @return mixed
      * @throws \Exception
      */
-    protected function normalizeResponse($response, $method, $exceptionOnError = true)
+    protected function checkAndNormalizeResponse($response, $httpcode, $method, $exceptionOnError = true)
     {
         if ($response === false) {
             if ($exceptionOnError) {
@@ -395,6 +413,18 @@ class ApiWrapper
         }
 
         $response = json_decode($response);
+
+        if ($httpcode != 200) {
+            if ($exceptionOnError) {
+                if (is_object($response) && !empty($response->error)) {
+                    throw new \Exception($method . ': ' . $response->error);
+                } else {
+                    throw new \Exception($method . ': Application error');
+                }
+            } else {
+                return false;
+            }
+        }
 
         if (is_object($response) && !empty($response->error)) {
             if ($exceptionOnError) {
