@@ -1,6 +1,6 @@
 <?php
 
-namespace ApplicationInput;
+namespace EventStudyTools\ApiWrapper\ApplicationInput;
 
 interface ApplicationInputInterface {
 

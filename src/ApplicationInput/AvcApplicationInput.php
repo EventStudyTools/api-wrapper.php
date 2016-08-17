@@ -1,9 +1,9 @@
 <?php
-namespace ApplicationInput;
+namespace EventStudyTools\ApiWrapper\ApplicationInput;
 
 use stdClass;
 
-class ArcApplicationInput extends AbstractApplicationInput implements ApplicationInputInterface {
+class AvcApplicationInput extends AbstractApplicationInput implements ApplicationInputInterface {
     /**
      * @param array $parameters
      */
@@ -18,7 +18,7 @@ class ArcApplicationInput extends AbstractApplicationInput implements Applicatio
         /*
          * Application
          */
-        $this->setWithDefault('application', $parameters, 'key', 'arc');
+        $this->setWithDefault('application', $parameters, 'key', 'avc');
 
         $request = new stdClass();
         $request->key = 'request_file';
@@ -32,6 +32,7 @@ class ArcApplicationInput extends AbstractApplicationInput implements Applicatio
         $market->key = 'market_data';
         $market->type = $parameters['datasources']['market_data'];
 
+
         $this->application->data_sources = array(
             $request, $firm, $market
         );
@@ -39,9 +40,8 @@ class ArcApplicationInput extends AbstractApplicationInput implements Applicatio
         /*
          * Parameters
          */
-        $this->set('parameters', $parameters, 'return_type');
-        $this->set('parameters', $parameters, 'result_file_type');
         $this->set('parameters', $parameters, 'non_trading_days');
+        $this->set('parameters', $parameters, 'result_file_type');
         $this->set('parameters', $parameters, 'benchmark_model');
         $this->set('parameters', $parameters, 'regression_method');
 
