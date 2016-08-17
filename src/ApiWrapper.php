@@ -339,13 +339,13 @@ class ApiWrapper
      * @return mixed
      * @throws \Exception
      */
-    function getTaskLinks()
+    function getTaskResults()
     {
         if (empty($this->token)) {
             throw new \Exception(__METHOD__ . ': Configuration validation error');
         }
 
-        $ch = curl_init($this->apiServerUrl . "/task/links/" . $this->getToken());
+        $ch = curl_init($this->apiServerUrl . "/results/" . $this->getToken());
 
         curl_setopt(
             $ch,

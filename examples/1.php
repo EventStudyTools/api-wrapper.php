@@ -63,12 +63,12 @@ if ($api->authentication(API_KEY)) {
 
     switch ($status) {
         case STATUS_DONE:
-            $links = $api->getTaskLinks();
+            $results = $api->getTaskResults();
 
             echo "Task \"" . $api->getToken() . "\" was terminated successfully\n";
             echo "Links:\n";
-            echo "log: " . $links->log . "\n";
-            foreach ($links->results as $link) echo $link . "\n";
+            if (!empty($results->log)) echo "log: " . $results->log . "\n";
+            foreach ($results->results as $result) echo $result . "\n";
 
             break;
 

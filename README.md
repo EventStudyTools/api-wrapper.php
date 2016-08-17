@@ -71,8 +71,8 @@ if ($api->authentication(API_KEY)) {
 
     switch ($status) {
         case STATUS_DONE:
-            $links = $api->getTaskLinks();
-            var_dump($links);
+            $results = $api->getTaskResults();
+            var_dump($results);
             break;
 
         case STATUS_ERROR:
@@ -115,8 +115,8 @@ if ($api->authentication(API_KEY)) {
 
     switch ($status) {
         case STATUS_DONE:
-            $links = $api->getTaskLinks();
-            var_dump($links);
+            $results = $api->getTaskResults();
+            var_dump($results);
             break;
 
         case STATUS_ERROR:
