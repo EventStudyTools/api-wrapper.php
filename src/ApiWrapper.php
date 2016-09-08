@@ -324,14 +324,6 @@ class ApiWrapper
 
         $result = $this->checkAndNormalizeResponse($result, $httpcode, __METHOD__, $exceptionOnError);
 
-        if ((string)$result !== (string)(integer)$result) {
-            if ($exceptionOnError) {
-                throw new \Exception(__METHOD__ . ': status is invalid');
-            } else {
-                return false;
-            }
-        }
-
         return $result;
     }
 
@@ -414,21 +406,13 @@ class ApiWrapper
 
         $response = json_decode($response);
 
-        if ($httpcode != 200) {
+        if ($httpcode != 200 || (is_object($response) && !empty($response->error))) {
             if ($exceptionOnError) {
                 if (is_object($response) && !empty($response->error)) {
                     throw new \Exception($method . ': ' . $response->error);
                 } else {
                     throw new \Exception($method . ': Application error');
                 }
-            } else {
-                return false;
-            }
-        }
-
-        if (is_object($response) && !empty($response->error)) {
-            if ($exceptionOnError) {
-                throw new \Exception($method . ': ' . $response->error);
             } else {
                 return false;
             }

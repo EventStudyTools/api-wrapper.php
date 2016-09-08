@@ -59,9 +59,9 @@ if ($api->authentication(API_KEY)) {
     do {
         sleep(15);
         $status = $api->getTaskStatus();
-    } while (!in_array($status, array(STATUS_DONE, STATUS_ERROR)));
+    } while (!in_array($status->status, array(STATUS_DONE, STATUS_ERROR)));
 
-    switch ($status) {
+    switch ($status->status) {
         case STATUS_DONE:
             $results = $api->getTaskResults();
 
@@ -73,11 +73,11 @@ if ($api->authentication(API_KEY)) {
             break;
 
         case STATUS_ERROR:
-            echo "Task \"" . $api->getToken() . "\" was terminated with error\n";
+            echo "Task \"" . $api->getToken() . "\" was terminated with error: " . $status->message . "\n";
             break;
 
         default:
-            echo "Invalid status \"" . $status . "\"\n";
+            echo "Invalid status \"" . $status->status . "\"\n";
             break;
     }
 }
