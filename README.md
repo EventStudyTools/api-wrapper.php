@@ -5,9 +5,16 @@ This software library provides the capability to easily deploy the EST API.
 * More detailed documentation about available applications can be found [here](http://wwww.eventtudytools.com)
 * The full API documentation is presented [here](http://wwww.eventtudytools.com/API-ARC)
 
-##Example of an Abnormal Returns Calculatior (ARC) launch
+##Example of an Abnormal Returns Calculator (ARC) launch
 
 ```php
+define('API_URL', 'http://api.est.dev');
+define('API_KEY', 'key1234567890');
+define('STATUS_DONE', 3);
+define('STATUS_ERROR', 4);
+
+require './../vendor/autoload.php';
+
 $parameters = [
   'result_file_type' => 'xls',
   'benchmark_model' =>  'mm',
@@ -48,21 +55,44 @@ $parameters = [
   ]
 ];
 
-$api = new EventStudyTools\ApiWrapper\ApiWrapper('arc', $apiEndpointUrl)));
+$api = new \EventStudyTools\ApiWrapper\ApiWrapper(API_URL);
 
-if ($api->authentication($apiKey)) {
-    $api->configureTask(new EventStudyTools\ApiWrapper\ApplicationInput\ArcApplicationInput($parameters));
-    $api->uploadFile('firm_data', './firmData.csv'));
-    $api->uploadFile('market_data', './marketData.csv'));
-    $api->uploadFile('request_file', './requestFile.csv'));
+if ($api->authentication(API_KEY)) {
+    $api->configureTask(new \EventStudyTools\ApiWrapper\ApplicationInput\ArcApplicationInput($parameters));
+    $api->uploadFile('firm_data', './firm_data.csv');
+    $api->uploadFile('market_data', './market_data.csv');
+    $api->uploadFile('request_file', './request_file.csv');
     $api->commitData();
-    $result = $api->processTask();
+
+    do {
+        sleep(15);
+        $status = $api->getTaskStatus();
+    } while (!in_array($status, array(STATUS_DONE, STATUS_ERROR)));
+
+    switch ($status) {
+        case STATUS_DONE:
+            $results = $api->getTaskResults();
+            var_dump($results);
+            break;
+
+        case STATUS_ERROR:
+            echo "Task \"" . $api->getToken() . "\" was terminated with error\n";
+            break;
+    }
 }
 ```
 
 ##Example of a Computer-Aided Text Analysis (CATA) launch
 
 ```php
+define('API_URL', 'http://api.est.dev');
+define('API_KEY', 'key1234567890');
+define('BASE_PATH', __DIR__);
+define('STATUS_DONE', 3);
+define('STATUS_ERROR', 4);
+
+require BASE_PATH . '/../vendor/autoload.php';
+
 $parameters = [
   'datasources' => [
       'text_data' =>  'csv_zip',
@@ -70,13 +100,28 @@ $parameters = [
   ]
 ];
 
-$api = new EventStudyTools\ApiWrapper\ApiWrapper('cata', $apiEndpointUrl)));
+$api = new \EventStudyTools\ApiWrapper\ApiWrapper(API_URL);
 
-if ($api->authentication($apiKey)) {
-    $api->configureTask(new EventStudyTools\ApiWrapper\ApplicationInput\CataApplicationInput($parameters));
+if ($api->authentication(API_KEY)) {
+    $api->configureTask(new \EventStudyTools\ApiWrapper\ApplicationInput\CataApplicationInput($parameters));
     $api->uploadFile('text_data', './texts.csv.zip');
     $api->uploadFile('keywords_data', './dictionary.csv.zip');
     $api->commitData();
-    $result = $api->processTask();
+
+    do {
+        sleep(15);
+        $status = $api->getTaskStatus();
+    } while (!in_array($status, array(STATUS_DONE, STATUS_ERROR)));
+
+    switch ($status) {
+        case STATUS_DONE:
+            $results = $api->getTaskResults();
+            var_dump($results);
+            break;
+
+        case STATUS_ERROR:
+            echo "Task \"" . $api->getToken() . "\" was terminated with error\n";
+            break;
+    }
 }
 ```
