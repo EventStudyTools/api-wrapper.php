@@ -169,7 +169,7 @@ class ApiWrapper
             return;
         }
 
-        $ch = curl_init($this->apiServerUrl . '/task/content/$fileKey/' . (int)$partNumber);
+        $ch = curl_init($this->apiServerUrl . "/task/content/$fileKey/" . (int)$partNumber);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
 
         curl_setopt(
