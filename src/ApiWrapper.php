@@ -2,6 +2,7 @@
 namespace EventStudyTools\ApiWrapper;
 
 use EventStudyTools\ApiWrapper\ApplicationInput\ApplicationInputInterface;
+use EventStudyTools\ApiWrapper\Exception\ApiSemanticException;
 
 class ApiWrapper
 {
@@ -308,9 +309,9 @@ class ApiWrapper
             $result = json_decode($result);
 
             if (isset($result->error)) {
-                throw new \Exception($result->error);
+                throw new ApiSemanticException($result->error);
             } else {
-                throw new \Exception('Application launch error');
+                throw new ApiSemanticException('Application launch error');
             }
         }
 
