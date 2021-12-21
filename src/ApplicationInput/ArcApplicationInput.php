@@ -33,10 +33,16 @@ class ArcApplicationInput extends AxcApplicationInput
     const BENCHMARK_MODEL_FFM4FM = 'ffm4fm';
 
     /** @var string */
+    const BENCHMARK_MODEL_FF5FM = 'ff5fm';
+
+    /** @var string */
     const BENCHMARK_MODEL_GARCH = 'garch';
 
     /** @var string */
     const BENCHMARK_MODEL_EGARCH = 'egarch';
+
+    /** @var string */
+    const BENCHMARK_MODEL_CAPM = 'capm';
 
     /** @var string */
     const NON_TRADING_DAYS_LATER = 'later';
