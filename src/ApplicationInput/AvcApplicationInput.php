@@ -27,6 +27,9 @@ class AvcApplicationInput extends AxcApplicationInput
     const BENCHMARK_MODEL_CPMAM = 'cpmam';
 
     /** @var string */
+    const BENCHMARK_MODEL_CMM = 'cmm';
+
+    /** @var string */
     const NON_TRADING_DAYS_LATER = 'later';
 
     /** @var string */
