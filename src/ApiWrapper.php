@@ -255,12 +255,13 @@ class ApiWrapper
 
     /**
      * @return mixed
+     * @throws ApiSemanticException
      * @throws \Exception
      */
     public function commitData()
     {
         if (empty($this->apiServerUrl) || empty($this->token)) {
-            throw new \Exception(__METHOD__ . ': Configuration validation error');
+            throw new ApiSemanticException(__METHOD__ . ': Configuration validation error');
         }
 
         $response = $this->_request('/task/commit', 'POST',
@@ -272,10 +273,16 @@ class ApiWrapper
         $result = $response['result'];
 
         if ($result === 'false' || preg_match('~<html~is', $result)) {
-            throw new \Exception(__METHOD__ . ': application data are incorrect');
+            throw new ApiSemanticException(__METHOD__ . ': application data are incorrect');
         }
 
-        return json_decode($result);
+        $decodedResponse =  json_decode($result);
+
+        if (isset($decodedResponse->error)) {
+            throw new ApiSemanticException($decodedResponse->error);
+        }
+
+        return $decodedResponse;
     }
 
     /**
